@@ -128,7 +128,6 @@ python bob.py
 ---
 
 ## Dependencies
-No external libraries required (only Python 3+)
----
+- No external libraries required (only Python 3+)
 
 
