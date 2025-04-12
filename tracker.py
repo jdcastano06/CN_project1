@@ -1,24 +1,39 @@
-import socket
-import threading
-import pickle
+import socket          # For network communication
+import threading       # For handling multiple clients simultaneously 
+import pickle          # For serializing/deserializing Python objects
 
+# Tracker server configuration
 TRACKER_HOST = 'localhost'
 TRACKER_PORT = 9000
 
-# file_id -> {chunk_index: [peer_address]}
+# Main data structure to track which peers have which chunks of files
+# Structure: {file_id -> {chunk_index: [list_of_peer_addresses]}}
 file_chunk_map = {}
 
 def handle_client(conn, addr):
+    """
+    Handles communication with a connected peer.
+    
+    Args:
+        conn: Socket connection to the peer
+        addr: Address of the connected peer
+    """
     try:
+        # Receive serialized data from the peer
         data = conn.recv(4096)
         message = pickle.loads(data)
 
+        # Process 'register' message type - when a peer announces chunks it has
         if message['type'] == 'register':
-            file_id = message['file_id']
-            chunks = message['chunks']
-            peer_address = message['peer_address']
+            file_id = message['file_id']        # Unique identifier for the file
+            chunks = message['chunks']          # List of chunk indices the peer has
+            peer_address = message['peer_address']  # Address where peer can be contacted
+            
+            # Create entry for new file if not already tracked
             if file_id not in file_chunk_map:
                 file_chunk_map[file_id] = {}
+                
+            # Add peer to the list of peers for each chunk it has
             for idx in chunks:
                 file_chunk_map[file_id].setdefault(idx, []).append(peer_address)
             conn.sendall(pickle.dumps({'status': 'ok'}))
